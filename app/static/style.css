@@ -173,3 +173,31 @@ button:disabled { opacity: 0.45; cursor: default; }
   font-size: 0.9rem;
   color: var(--muted);
 }
+
+/* --- диалог выбора буквы для пустышки --- */
+
+.blank-dialog {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  padding: 1rem;
+}
+
+.blank-dialog::backdrop { background: rgba(35, 32, 27, 0.35); }
+
+.blank-letters {
+  display: grid;
+  grid-template-columns: repeat(11, var(--cell));
+  gap: 0.3rem;
+  margin-bottom: 0.8rem;
+}
+
+.blank-letter {
+  width: var(--cell);
+  height: var(--cell);
+  padding: 0;
+  cursor: pointer;
+}
+
+.blank-cancel { display: block; margin-left: auto; }

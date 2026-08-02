@@ -32,6 +32,8 @@ def for_player(game: Game, player_id: str) -> dict:
         "bonuses": list(game.tileset.board),
         "center": list(game.tileset.center),
         "rack_size": game.tileset.rack_size,
+        # алфавит нужен клиенту для диалога выбора буквы у пустышки
+        "alphabet": [spec.letter for spec in game.tileset.tiles],
         "rack": [tile_to_dict(tile) for tile in me.rack] if me else [],
         "players": [_player(p, me) for p in game.players],
         "bag": len(game.bag),
