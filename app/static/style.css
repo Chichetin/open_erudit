@@ -242,3 +242,15 @@ button:disabled { opacity: 0.45; cursor: default; }
 
 .end-screen h2 { margin-top: 0; }
 .end-scores { margin: 0 0 0.6rem; padding-left: 1.2rem; }
+
+/* --- перетаскивание --- */
+
+.tile-ghost {
+  position: fixed;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0.85;
+  transform: scale(1.05);
+}
+
+.cell, .rack-tile { touch-action: none; }

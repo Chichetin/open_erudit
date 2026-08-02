@@ -2,6 +2,7 @@
 
 import { createBoard } from "./board.js";
 import { createDraft } from "./draft.js";
+import { enableDragAndDrop } from "./dragdrop.js";
 import { checkGeometry } from "./placement.js";
 import { createRack } from "./rack.js";
 import { getState, setState, subscribe } from "./state.js";
@@ -73,6 +74,9 @@ function askBlankLetter(state) {
         return button;
       })
     );
+    // returnValue переживает закрытие диалога: без сброса Esc вернул бы
+    // букву, выбранную в прошлый раз
+    elements.blankDialog.returnValue = "";
     elements.blankDialog.addEventListener(
       "close",
       () => resolve(elements.blankDialog.returnValue || null),
@@ -82,25 +86,8 @@ function askBlankLetter(state) {
   });
 }
 
-async function onCellClick(row, col) {
+async function putFromRack(row, col, tileId) {
   const state = getState();
-  if (!state || state.status !== "active") return;
-
-  if (draft.at(row, col)) {
-    draft.remove(row, col);
-    return;
-  }
-  if (state.board[row][col]) return;
-  if (!state.your_turn) {
-    showMessage("Сейчас ход соперника");
-    return;
-  }
-
-  const tileId = rack.selected;
-  if (tileId === null) {
-    showMessage("Сначала выберите фишку на стойке");
-    return;
-  }
   const tile = state.rack.find((item) => item.id === tileId);
   if (!tile) return;
 
@@ -111,6 +98,54 @@ async function onCellClick(row, col) {
     draft.put(row, col, { tileId, letter, isBlank: true });
   } else {
     draft.put(row, col, { tileId, letter: tile.letter });
+  }
+}
+
+function canPlaceAt(state, row, col) {
+  if (!state || state.status !== "active") return false;
+  if (state.board[row][col]) return false;
+  if (!state.your_turn) {
+    showMessage("Сейчас ход соперника");
+    return false;
+  }
+  return true;
+}
+
+async function onCellClick(row, col) {
+  const state = getState();
+  if (!state || state.status !== "active") return;
+
+  if (draft.at(row, col)) {
+    draft.remove(row, col);
+    return;
+  }
+  if (!canPlaceAt(state, row, col)) return;
+
+  const tileId = rack.selected;
+  if (tileId === null) {
+    showMessage("Сначала выберите фишку на стойке");
+    return;
+  }
+  await putFromRack(row, col, tileId);
+}
+
+// Перетаскивание пишет в тот же черновик, что и тап.
+async function onDrop({ tileId, from, row, col }) {
+  const state = getState();
+  if (!canPlaceAt(state, row, col)) return;
+
+  if (from === "rack") {
+    await putFromRack(row, col, tileId);
+    return;
+  }
+  // фишку двигают по доске: у пустышки уже выбрана буква, не спрашиваем снова
+  const existing = draft.at(from.row, from.col);
+  if (existing) {
+    draft.put(row, col, {
+      tileId: existing.tileId,
+      letter: existing.letter,
+      isBlank: existing.isBlank,
+    });
   }
 }
 
@@ -260,6 +295,13 @@ const socket = createSocket({
       });
     }
   },
+});
+
+enableDragAndDrop({
+  boardRoot: document.getElementById("board"),
+  rackRoot: document.getElementById("rack"),
+  onDrop,
+  onPickUp: (row, col) => draft.at(row, col),
 });
 
 window.addEventListener("beforeunload", () => socket.close());
