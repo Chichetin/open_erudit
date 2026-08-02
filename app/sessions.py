@@ -11,6 +11,7 @@ import re
 import secrets
 from pathlib import Path
 
+from erudit import storage
 from erudit.config import GAMES_DIR, TileSet, load_tileset
 from erudit.dictionary import Dictionary, load_dictionary
 from erudit.game import Game, Player
@@ -43,6 +44,15 @@ class GameRegistry:
         self.max_games = max_games
         self.games: dict[str, Game] = {}
 
+    def restore(self) -> int:
+        """Поднимает партии со снапшотов. Вызывается один раз при старте."""
+        storage.prune_finished(self.games_dir)
+        self.games = storage.load_all(self.games_dir, self.tileset, self.dictionary)
+        return len(self.games)
+
+    def save(self, game: Game) -> None:
+        storage.save(game, self.games_dir)
+
     def create(self, names: tuple[str, ...] = DEFAULT_NAMES) -> Game:
         if len(self.games) >= self.max_games:
             self._drop_oldest_finished()
@@ -58,6 +68,7 @@ class GameRegistry:
             game.add_player(name)
         game.start()
         self.games[game_id] = game
+        self.save(game)
         return game
 
     def get(self, game_id: str) -> Game | None:

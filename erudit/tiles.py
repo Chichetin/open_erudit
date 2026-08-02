@@ -44,6 +44,13 @@ class Bag:
         self._rng = rng
         self._rng.shuffle(self._tiles)
 
+    @classmethod
+    def restore(cls, tiles: list[Tile], rng: random.Random) -> Bag:
+        """Мешок из снапшота: порядок фишек сохраняется как есть."""
+        bag = cls([], rng)
+        bag._tiles = list(tiles)
+        return bag
+
     def draw(self, n: int) -> list[Tile]:
         """Берёт до n фишек. Из пустого мешка возвращает пустой список."""
         n = max(0, min(n, len(self._tiles)))

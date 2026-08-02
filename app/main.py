@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
@@ -30,8 +31,15 @@ CLOSE_UNAUTHORIZED = 4401
 CLOSE_NOT_FOUND = 4404
 
 
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    # партии переживают перезапуск сервера: снапшоты лежат на диске
+    app.state.registry.restore()
+    yield
+
+
 def create_app(registry: GameRegistry | None = None) -> FastAPI:
-    app = FastAPI(title="open_erudit")
+    app = FastAPI(title="open_erudit", lifespan=_lifespan)
     app.state.registry = registry if registry is not None else GameRegistry()
     app.state.hub = Hub()
     app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
@@ -77,7 +85,7 @@ def create_app(registry: GameRegistry | None = None) -> FastAPI:
         try:
             await hub.send_state(game, player.id, socket)
             await _announce_presence(hub, game)
-            await _serve(socket, hub, game, player)
+            await _serve(socket, hub, registry, game, player)
         except WebSocketDisconnect:
             pass
         finally:
@@ -112,7 +120,9 @@ async def _authenticate(
     return found
 
 
-async def _serve(socket: WebSocket, hub: Hub, game: Game, player: Player) -> None:
+async def _serve(
+    socket: WebSocket, hub: Hub, registry: GameRegistry, game: Game, player: Player
+) -> None:
     while True:
         try:
             message = await _receive(socket)
@@ -124,11 +134,16 @@ async def _serve(socket: WebSocket, hub: Hub, game: Game, player: Player) -> Non
             continue
 
         async with hub.lock(game.id):
-            await _handle(socket, hub, game, player, message)
+            await _handle(socket, hub, registry, game, player, message)
 
 
 async def _handle(
-    socket: WebSocket, hub: Hub, game: Game, player: Player, message: dict
+    socket: WebSocket,
+    hub: Hub,
+    registry: GameRegistry,
+    game: Game,
+    player: Player,
+    message: dict,
 ) -> None:
     kind = message.get("type")
     before = len(game.log)
@@ -171,6 +186,7 @@ async def _handle(
         )
         return
 
+    registry.save(game)
     for entry in game.log[before:]:
         await hub.broadcast(game.id, {"type": "log", "entry": entry})
     await hub.broadcast_state(game)
