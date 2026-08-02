@@ -7,8 +7,34 @@
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body class="game" data-game-id="{{ game_id }}">
-  <main id="app">
-    <p id="status">Соединение…</p>
+  <header class="topbar">
+    <h1>Эрудит</h1>
+    <div id="scores" class="scores"></div>
+    <div id="connection" class="connection">соединение…</div>
+  </header>
+
+  <main class="layout">
+    <section class="board-area">
+      <div id="board" class="board" aria-label="Игровое поле"></div>
+    </section>
+
+    <aside class="side">
+      <p id="turn" class="turn"></p>
+      <div id="preview" class="preview"></div>
+      <div id="rack" class="rack" aria-label="Ваши фишки"></div>
+      <div class="controls">
+        <button id="commit" type="button">Подтвердить</button>
+        <button id="reset" type="button">Сбросить</button>
+        <button id="exchange" type="button">Обмен</button>
+        <button id="pass" type="button">Пас</button>
+      </div>
+      <p id="message" class="message" hidden></p>
+      <p id="bag" class="bag"></p>
+      <h2>Журнал</h2>
+      <ol id="log" class="log"></ol>
+    </aside>
   </main>
+
+  <script type="module" src="/static/js/game.js"></script>
 </body>
 </html>
