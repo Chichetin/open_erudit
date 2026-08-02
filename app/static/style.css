@@ -60,7 +60,8 @@ button:disabled { opacity: 0.45; cursor: default; }
 .scores { display: flex; gap: 1rem; }
 .score { padding: 0.1rem 0.5rem; border-radius: 5px; }
 .score-active { background: #efe3cd; font-weight: 600; }
-.score-offline { color: var(--muted); text-decoration: line-through dotted; }
+.score-offline { color: var(--muted); }
+.score-offline::after { content: " · не в сети"; font-size: 0.8em; }
 
 .connection { margin-left: auto; color: var(--muted); font-size: 0.9rem; }
 .connection-offline, .connection-unauthorized { color: var(--error); }
