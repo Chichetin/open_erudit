@@ -201,3 +201,44 @@ button:disabled { opacity: 0.45; cursor: default; }
 }
 
 .blank-cancel { display: block; margin-left: auto; }
+
+/* --- журнал, обмен, конец партии --- */
+
+.log-entry { margin-bottom: 0.2rem; }
+.log-move { color: var(--ink); }
+.log-finish { color: var(--accent); font-weight: 600; }
+
+.unknown-words { display: flex; flex-direction: column; gap: 0.3rem; }
+.allow-word { align-self: flex-start; }
+
+.exchange-dialog {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  padding: 1rem;
+}
+
+.exchange-dialog::backdrop { background: rgba(35, 32, 27, 0.35); }
+
+.exchange-tiles { display: flex; gap: 0.4rem; margin-bottom: 0.8rem; }
+
+.exchange-tile {
+  width: var(--cell);
+  height: var(--cell);
+  padding: 0;
+  cursor: pointer;
+}
+
+.exchange-buttons { display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+.end-screen {
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.end-screen h2 { margin-top: 0; }
+.end-scores { margin: 0 0 0.6rem; padding-left: 1.2rem; }

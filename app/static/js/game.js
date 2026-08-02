@@ -5,6 +5,7 @@ import { createDraft } from "./draft.js";
 import { checkGeometry } from "./placement.js";
 import { createRack } from "./rack.js";
 import { getState, setState, subscribe } from "./state.js";
+import { askExchange, renderEndScreen, renderLog, renderUnknownWords } from "./ui.js";
 import { createSocket } from "./ws.js";
 
 const gameId = document.body.dataset.gameId;
@@ -37,6 +38,8 @@ const elements = {
   pass: document.getElementById("pass"),
   blankDialog: document.getElementById("blank-dialog"),
   blankLetters: document.getElementById("blank-letters"),
+  log: document.getElementById("log"),
+  unknown: document.getElementById("unknown-words"),
 };
 
 let lastMoveNo = null;
@@ -50,6 +53,7 @@ function showMessage(text, kind = "error") {
   elements.message.textContent = text ?? "";
   elements.message.className = `message ${kind}`;
   elements.message.hidden = !text;
+  if (!text) elements.unknown.replaceChildren();
 }
 
 function showPreview(text, kind) {
@@ -172,7 +176,9 @@ function renderAll() {
   renderScores(state);
   renderTurn(state);
   renderControls(state);
+  renderLog(elements.log, state);
   elements.bag.textContent = `В мешке фишек: ${state.bag}`;
+  if (state.status === "finished") renderEndScreen(state);
 }
 
 subscribe((state) => {
@@ -194,6 +200,20 @@ elements.commit.addEventListener("click", () => {
 elements.reset.addEventListener("click", () => {
   draft.clear();
   showMessage(null);
+});
+
+elements.pass.addEventListener("click", () => {
+  if (!confirm("Пропустить ход?")) return;
+  draft.clear();
+  socket.send({ type: "pass" });
+});
+
+elements.exchange.addEventListener("click", async () => {
+  const state = getState();
+  if (!state) return;
+  draft.clear();
+  const tileIds = await askExchange(state);
+  if (tileIds && tileIds.length) socket.send({ type: "exchange", tile_ids: tileIds });
 });
 
 const socket = createSocket({
@@ -231,6 +251,13 @@ const socket = createSocket({
       }
     } else if (message.type === "error") {
       showMessage(message.message);
+      // отказ из-за незнакомого слова — единственный, который игрок может
+      // снять сам: словарь правится по ходу партии, без подтверждения
+      renderUnknownWords(elements.unknown, message.unknown_words ?? [], (word) => {
+        socket.send({ type: "allow_word", word });
+        socket.send({ type: "commit", placements: draft.payload() });
+        showMessage(null);
+      });
     }
   },
 });
