@@ -69,15 +69,31 @@ if [[ "$TUNNEL" -eq 1 ]]; then
   fi
 
   TUNNEL_LOG="$(mktemp)"
-  cloudflared tunnel --url "http://localhost:${PORT}" >"$TUNNEL_LOG" 2>&1 &
-  CLOUDFLARED_PID=$!
-
   echo "Поднимаем туннель Cloudflare…"
+
+  # Регистрация быстрого туннеля срывается по мелочам — таймаут запроса,
+  # AAAA-запись при мёртвом IPv6 — поэтому несколько попыток.
   PUBLIC_URL=""
-  for _ in $(seq 1 100); do
-    PUBLIC_URL="$(grep -om1 'https://[a-z0-9-]*\.trycloudflare\.com' "$TUNNEL_LOG" || true)"
+  for attempt in 1 2 3; do
+    : >"$TUNNEL_LOG"
+    cloudflared tunnel --url "http://localhost:${PORT}" >"$TUNNEL_LOG" 2>&1 &
+    CLOUDFLARED_PID=$!
+
+    for _ in $(seq 1 100); do
+      # api.trycloudflare.com — адрес регистрации, он мелькает в сообщениях
+      # об ошибках; нужен именно выданный хост
+      PUBLIC_URL="$(grep -aom1 'https://[a-z0-9-]*\.trycloudflare\.com' "$TUNNEL_LOG" \
+        | grep -v '^https://api\.' || true)"
+      [[ -n "$PUBLIC_URL" ]] && break
+      kill -0 "$CLOUDFLARED_PID" 2>/dev/null || break
+      sleep 0.3
+    done
+
     [[ -n "$PUBLIC_URL" ]] && break
-    sleep 0.3
+    echo "  попытка ${attempt}: не получилось, пробуем снова" >&2
+    kill "$CLOUDFLARED_PID" 2>/dev/null || true
+    wait "$CLOUDFLARED_PID" 2>/dev/null || true
+    CLOUDFLARED_PID=""
   done
 
   if [[ -z "$PUBLIC_URL" ]]; then
@@ -85,6 +101,19 @@ if [[ "$TUNNEL" -eq 1 ]]; then
     cat "$TUNNEL_LOG" >&2
     exit 1
   fi
+
+  # Адрес выдан — но это ещё не значит, что соединения с edge встали.
+  for _ in $(seq 1 40); do
+    grep -aq 'Registered tunnel connection' "$TUNNEL_LOG" && break
+    sleep 0.5
+  done
+  if ! grep -aq 'Registered tunnel connection' "$TUNNEL_LOG"; then
+    echo "Туннель зарегистрирован, но соединения с Cloudflare не встали." >&2
+    echo "Обычно это блокировка исходящего порта 7844 (VPN, файрвол)." >&2
+    grep -aE 'ERR ' "$TUNNEL_LOG" | tail -3 >&2
+    exit 1
+  fi
+
   BASE_URL="$PUBLIC_URL"
 fi
 
