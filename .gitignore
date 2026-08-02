@@ -1,0 +1,17 @@
+# IDE
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Снапшоты партий — рабочие данные, не исходники
+data/games/*.json
+
+# Прочее
+*.log
+.env
