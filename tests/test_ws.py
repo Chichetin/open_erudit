@@ -192,12 +192,13 @@ def test_pass_and_exchange(client, game):
         assert len(state["rack"]) == 7
 
 
-def test_log_messages_are_broadcast(client, game):
+def test_journal_arrives_inside_state(client, game):
+    # отдельного сообщения на запись журнала нет: журнал целиком лежит в state
     with client.websocket_connect(f"/g/{game.id}/ws") as socket:
         hello(socket, game.players[0].token)
         socket.send_json({"type": "pass"})
-        entry = recv(socket, "log")
-    assert entry["entry"]["type"] == "pass"
+        state = recv(socket, "state")
+    assert [entry["type"] for entry in state["log"]] == ["start", "pass"]
 
 
 # --- мусор от клиента -------------------------------------------------------------

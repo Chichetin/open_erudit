@@ -146,7 +146,6 @@ async def _handle(
     message: dict,
 ) -> None:
     kind = message.get("type")
-    before = len(game.log)
 
     try:
         if kind == "draft":
@@ -187,8 +186,6 @@ async def _handle(
         return
 
     registry.save(game)
-    for entry in game.log[before:]:
-        await hub.broadcast(game.id, {"type": "log", "entry": entry})
     await hub.broadcast_state(game)
 
 

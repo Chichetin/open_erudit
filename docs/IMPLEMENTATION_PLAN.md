@@ -358,8 +358,9 @@ class Dictionary:
 Клиент → сервер: `hello {token}`, `draft {placements}`, `commit {placements}`,
 `exchange {tile_ids}`, `pass`, `allow_word {word}`.
 
-Сервер → клиент: `state {...}`, `preview {...}`, `presence {...}`, `log {entry}`,
-`error {message}`.
+Сервер → клиент: `state {...}`, `preview {...}`, `presence {...}`,
+`error {message}`. Журнал едет внутри `state`, отдельного сообщения на запись
+в него нет — см. раздел 4 в `PLAN.md`.
 
 Первое сообщение в сокете обязано быть `hello`. До успешной авторизации любое
 другое — закрытие соединения. После каждого события, меняющего партию, всем
