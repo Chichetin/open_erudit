@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Эрудит</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="lobby">
+  <main>
+    <h1>Эрудит</h1>
+    <p>Партия на двоих. Создайте игру и отправьте сопернику вторую ссылку.</p>
+    <button id="create" type="button">Создать партию</button>
+    <div id="links" hidden>
+      <h2>Ссылки</h2>
+      <p>Первая — вам, вторая — сопернику. Ссылка личная: по ней виден ваш набор фишек.</p>
+      <ol id="link-list"></ol>
+    </div>
+    <p id="error" class="error" hidden></p>
+  </main>
+  <script type="module" src="/static/js/lobby.js"></script>
+</body>
+</html>
