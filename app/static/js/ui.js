@@ -133,6 +133,89 @@ export function askExchange(state) {
   });
 }
 
+const SVG = "http://www.w3.org/2000/svg";
+const LINE_COLORS = ["var(--accent)", "var(--tl)", "var(--ok)", "var(--tw)"];
+
+function svg(tag, attributes) {
+  const element = document.createElementNS(SVG, tag);
+  for (const [name, value] of Object.entries(attributes)) element.setAttribute(name, value);
+  return element;
+}
+
+// График счёта по ходам: по линии на игрока, последняя точка — итог со
+// штрафами за остаток фишек.
+function scoreChart(timeline, players) {
+  const width = 320;
+  const height = 130;
+  const pad = 6;
+  const values = timeline.flat();
+  const top = Math.max(1, ...values);
+  const bottom = Math.min(0, ...values);
+  const x = (i) => pad + (i * (width - 2 * pad)) / Math.max(1, timeline.length - 1);
+  const y = (v) => pad + ((top - v) * (height - 2 * pad)) / (top - bottom);
+
+  const chart = svg("svg", {
+    viewBox: `0 0 ${width} ${height}`,
+    class: "score-chart",
+    role: "img",
+    "aria-label": "График счёта по ходам",
+  });
+  chart.append(svg("line", { x1: pad, x2: width - pad, y1: y(0), y2: y(0), class: "chart-zero" }));
+  players.forEach((player, index) => {
+    const points = timeline.map((row, i) => `${x(i)},${y(row[index])}`).join(" ");
+    chart.append(
+      svg("polyline", { points, fill: "none", stroke: LINE_COLORS[index], "stroke-width": 2 })
+    );
+  });
+  const topLabel = svg("text", { x: width - pad, y: pad + 8, class: "chart-label" });
+  topLabel.textContent = String(top);
+  chart.append(topLabel);
+
+  const legend = document.createElement("div");
+  legend.className = "chart-legend";
+  players.forEach((player, index) => {
+    const item = document.createElement("span");
+    item.style.setProperty("--series", LINE_COLORS[index]);
+    item.textContent = player.name;
+    legend.append(item);
+  });
+
+  const box = document.createElement("div");
+  box.append(chart, legend);
+  return box;
+}
+
+function statsTable(stats, players) {
+  const youById = new Map(players.map((player) => [player.id, player.is_you]));
+  const rows = [
+    ["Ходов", (s) => s.moves],
+    ["В среднем за ход", (s) => s.average],
+    ["Лучший ход", (s) => (s.best ? `${s.best.words.join(", ")} — ${s.best.score}` : "—")],
+    ["Самое длинное слово", (s) => s.longest ?? "—"],
+    ["Бинго (все 7 фишек)", (s) => s.bingos],
+    ["Пасы / обмены", (s) => `${s.passes} / ${s.exchanges}`],
+  ];
+
+  const table = document.createElement("table");
+  table.className = "stats-table";
+  const head = table.createTHead().insertRow();
+  head.append(document.createElement("th"));
+  for (const item of stats.players) {
+    const th = document.createElement("th");
+    th.textContent = `${item.name}${youById.get(item.id) ? " (вы)" : ""}`;
+    head.append(th);
+  }
+  const body = table.createTBody();
+  for (const [label, value] of rows) {
+    const row = body.insertRow();
+    const th = document.createElement("th");
+    th.textContent = label;
+    row.append(th);
+    for (const item of stats.players) row.insertCell().textContent = String(value(item));
+  }
+  return table;
+}
+
 export function rematchUrl(rematch) {
   return `/g/${rematch.game_id}#${rematch.token}`;
 }
@@ -189,4 +272,13 @@ export function renderEndScreen(state, { rematchRequested, onRematch }) {
   actions.append(fresh);
 
   screen.replaceChildren(title, scores, actions);
+  if (state.stats) {
+    const heading = document.createElement("h3");
+    heading.textContent = "Итоги";
+    screen.append(
+      heading,
+      statsTable(state.stats, state.players),
+      scoreChart(state.stats.timeline, state.stats.players)
+    );
+  }
 }

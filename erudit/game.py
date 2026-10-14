@@ -181,6 +181,7 @@ class Game:
             words=[list(item) for item in checked.per_word],
             score=checked.total,
             move_no=self.move_no,
+            tiles=len(checked.placements),
         )
 
         went_out = player if not player.rack and len(self.bag) == 0 else None

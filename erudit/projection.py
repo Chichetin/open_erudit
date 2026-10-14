@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections import Counter
 
 from erudit.game import Game, Player
+from erudit.stats import summarize
 from erudit.tiles import Tile
 
 
@@ -46,6 +47,7 @@ def for_player(game: Game, player_id: str) -> dict:
         "log": list(game.log),
         "winners": [p.id for p in game.winners()] if game.status == "finished" else [],
         "rematch": _rematch(game, me),
+        "stats": summarize(game) if game.status == "finished" else None,
     }
 
 

@@ -365,6 +365,27 @@ button:disabled { opacity: 0.45; cursor: default; }
 .end-screen h2 { margin-top: 0; }
 .end-scores { margin: 0 0 0.6rem; padding-left: 1.2rem; }
 .end-actions { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.end-screen h3 { margin: 1rem 0 0.4rem; font-size: 0.95rem; }
+
+.stats-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.stats-table th, .stats-table td { padding: 0.2rem 0.3rem; text-align: left; vertical-align: top; }
+.stats-table tbody th { font-weight: 400; color: var(--muted); }
+.stats-table tbody tr + tr { border-top: 1px solid #ece5d6; }
+
+.score-chart { display: block; width: 100%; height: auto; margin-top: 0.6rem; }
+.chart-zero { stroke: var(--line); stroke-dasharray: 3 3; }
+.chart-label { font-size: 9px; fill: var(--muted); text-anchor: end; }
+
+.chart-legend { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--muted); }
+.chart-legend span::before {
+  content: "";
+  display: inline-block;
+  width: 0.9rem;
+  height: 3px;
+  margin-right: 0.3rem;
+  vertical-align: middle;
+  background: var(--series);
+}
 
 .button-link {
   padding: 0.45rem 0.9rem;

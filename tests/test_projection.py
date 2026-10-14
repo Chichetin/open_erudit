@@ -89,3 +89,12 @@ def test_rematch_shows_only_own_token(tileset, dictionary):
     state = for_player(game, "p1")
     assert state["rematch"] == {"game_id": "fedcba9876", "token": "свой-токен"}
     assert "чужой-токен" not in repr(state)
+
+
+def test_stats_only_after_the_game(tileset, dictionary):
+    game = make_game(tileset, dictionary)
+    assert for_player(game, "p1")["stats"] is None
+    for _ in range(6):
+        game.do_pass(game.players[game.current].id)
+    stats = for_player(game, "p1")["stats"]
+    assert [item["id"] for item in stats["players"]] == ["p1", "p2"]
