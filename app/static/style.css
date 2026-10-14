@@ -64,6 +64,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 .score-offline::after { content: " · не в сети"; font-size: 0.8em; }
 
 .connection { margin-left: auto; color: var(--muted); font-size: 0.9rem; }
+.notify-toggle { padding: 0.1rem 0.45rem; align-self: center; }
 .connection-offline, .connection-unauthorized { color: var(--error); }
 
 .layout {

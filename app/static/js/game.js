@@ -4,6 +4,7 @@ import { createBoard } from "./board.js";
 import { createCellMenu } from "./cellmenu.js";
 import { createDraft } from "./draft.js";
 import { enableDragAndDrop } from "./dragdrop.js";
+import { createTurnNotifier } from "./notify.js";
 import { checkGeometry } from "./placement.js";
 import { createRack } from "./rack.js";
 import { getState, setState, subscribe } from "./state.js";
@@ -64,6 +65,7 @@ const rack = createRack(document.getElementById("rack"), {
   storageKey: `erudit:${gameId}:rack`,
 });
 const cellMenu = createCellMenu({ onPick: putFromRack });
+const notifier = createTurnNotifier(document.getElementById("notify"));
 
 function showMessage(text, kind = "error") {
   elements.message.textContent = text ?? "";
@@ -267,6 +269,7 @@ subscribe((state) => {
     showMessage(null);
   }
   lastMoveNo = state.move_no;
+  notifier.update(state);
   renderAll();
 });
 
