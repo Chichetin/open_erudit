@@ -330,6 +330,33 @@ button:disabled { opacity: 0.45; cursor: default; }
 /* --- журнал, обмен, конец партии --- */
 
 .log-entry { margin-bottom: 0.2rem; }
+
+.log-word {
+  padding: 0;
+  border: none;
+  border-bottom: 1px dashed currentColor;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+.log-word:hover { color: var(--accent); }
+
+.meaning-dialog {
+  max-width: min(32rem, calc(100vw - 2rem));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  padding: 1rem 1.2rem;
+}
+
+.meaning-dialog::backdrop { background: rgba(35, 32, 27, 0.35); }
+.meaning-dialog h2 { margin: 0 0 0.5rem; }
+.meaning-dialog ol { margin: 0 0 0.6rem; padding-left: 1.3rem; }
+.meaning-dialog li { margin-bottom: 0.3rem; }
+.meaning-dialog button { display: block; margin: 0.8rem 0 0 auto; }
 .log-move { color: var(--ink); }
 .log-finish { color: var(--accent); font-weight: 600; }
 

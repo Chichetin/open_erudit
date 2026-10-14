@@ -19,6 +19,7 @@ from app.protocol import (
     parse_word,
 )
 from app.sessions import GameRegistry, is_valid_game_id
+from app.wiktionary import WORD_RE, Wiktionary, WiktionaryError, page_url
 from erudit.game import Game, Player
 from erudit.rules import MoveError
 
@@ -38,9 +39,12 @@ async def _lifespan(app: FastAPI):
     yield
 
 
-def create_app(registry: GameRegistry | None = None) -> FastAPI:
+def create_app(
+    registry: GameRegistry | None = None, wiktionary: Wiktionary | None = None
+) -> FastAPI:
     app = FastAPI(title="open_erudit", lifespan=_lifespan)
     app.state.registry = registry if registry is not None else GameRegistry()
+    app.state.wiktionary = wiktionary if wiktionary is not None else Wiktionary()
     app.state.hub = Hub()
     app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
 
@@ -65,6 +69,20 @@ def create_app(registry: GameRegistry | None = None) -> FastAPI:
             "game_id": game.id,
             "links": registry.links(str(request.base_url), game),
         }
+
+    # Сервер ходит в Викисловарь сам: так браузеру не нужен доступ к нему,
+    # а ответы кешируются для обоих игроков.
+    @app.get("/words/{word}")
+    async def word_meaning(request: Request, word: str):
+        word = word.strip().upper()
+        if not WORD_RE.match(word):
+            raise HTTPException(status_code=400, detail="Так слово не выглядит")
+        wiktionary: Wiktionary = request.app.state.wiktionary
+        try:
+            definitions = await wiktionary.definitions(word)
+        except WiktionaryError as exc:
+            raise HTTPException(status_code=502, detail="Викисловарь не ответил") from exc
+        return {"word": word, "definitions": definitions, "url": page_url(word)}
 
     @app.get("/g/{game_id}", response_class=HTMLResponse)
     async def game_page(request: Request, game_id: str):

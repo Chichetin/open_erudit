@@ -1,12 +1,81 @@
 // Части интерфейса, не связанные с доской: журнал, диалог обмена,
 // предложение добавить слово в словарь, оставшиеся буквы, экран конца партии.
 
+// Значение слова — из Викисловаря через сервер. Окно одно на страницу.
+async function showMeaning(word) {
+  let dialog = document.getElementById("meaning-dialog");
+  if (!dialog) {
+    dialog = document.createElement("dialog");
+    dialog.id = "meaning-dialog";
+    dialog.className = "meaning-dialog";
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close(); // клик по затемнению
+    });
+    document.body.append(dialog);
+  }
+
+  const title = document.createElement("h2");
+  title.textContent = word;
+  const body = document.createElement("div");
+  body.textContent = "Загружаем…";
+  const close = document.createElement("button");
+  close.type = "button";
+  close.textContent = "Закрыть";
+  close.addEventListener("click", () => dialog.close());
+  dialog.replaceChildren(title, body, close);
+  if (!dialog.open) dialog.showModal();
+
+  try {
+    const response = await fetch(`/words/${encodeURIComponent(word)}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail ?? "ошибка сервера");
+    const link = Object.assign(document.createElement("a"), {
+      href: data.url,
+      target: "_blank",
+      rel: "noopener",
+      textContent: "Статья в Викисловаре",
+    });
+    if (data.definitions.length === 0) {
+      body.replaceChildren("В Викисловаре нет русского значения этого слова. ", link);
+      return;
+    }
+    const list = document.createElement("ol");
+    for (const text of data.definitions) {
+      list.append(Object.assign(document.createElement("li"), { textContent: text }));
+    }
+    body.replaceChildren(list, link);
+  } catch (error) {
+    body.textContent = `Не получилось узнать значение: ${error.message}`;
+  }
+}
+
+function wordButton(word) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "log-word";
+  button.textContent = word;
+  button.title = "Что значит это слово";
+  button.addEventListener("click", () => showMeaning(word));
+  return button;
+}
+
 export function renderLog(root, state) {
+  const names = new Map(state.players.map((player) => [player.id, player.name]));
   root.replaceChildren(
     ...state.log.map((entry) => {
       const item = document.createElement("li");
       item.className = `log-entry log-${entry.type}`;
-      item.textContent = entry.text;
+      if (entry.type === "move" && entry.words) {
+        // слова хода — кнопки: по клику показываем значение
+        item.append(`${names.get(entry.player) ?? ""}: `);
+        entry.words.forEach(([word], index) => {
+          if (index) item.append(", ");
+          item.append(wordButton(word));
+        });
+        item.append(` — ${entry.score}`);
+      } else {
+        item.textContent = entry.text;
+      }
       return item;
     })
   );
