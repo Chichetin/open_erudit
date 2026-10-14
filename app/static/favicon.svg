@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect x="3" y="3" width="58" height="58" rx="10" fill="#f0dcae" stroke="#8a5a2b" stroke-width="4"/>
+  <text x="29" y="45" text-anchor="middle" font-family="system-ui, sans-serif" font-size="38" font-weight="700" fill="#23201b">Э</text>
+  <text x="50" y="54" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#23201b">8</text>
+</svg>
