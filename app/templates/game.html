@@ -12,8 +12,6 @@
   <header class="topbar">
     <h1>Эрудит</h1>
     <div id="scores" class="scores"></div>
-    <button id="letters-toggle" type="button" class="letters-toggle"
-            aria-expanded="false" aria-controls="letters-panel">Буквы</button>
     <div id="connection" class="connection">соединение…</div>
   </header>
 
@@ -42,7 +40,11 @@
       </div>
       <p id="message" class="message" hidden></p>
       <div id="unknown-words" class="unknown-words"></div>
-      <p id="bag" class="bag"></p>
+      <div class="bag-row">
+        <p id="bag" class="bag"></p>
+        <button id="letters-toggle" type="button" class="letters-toggle"
+                aria-expanded="false" aria-controls="letters-panel">Буквы</button>
+      </div>
       <h2>Журнал</h2>
       <ol id="log" class="log"></ol>
     </aside>

@@ -68,7 +68,8 @@ button:disabled { opacity: 0.45; cursor: default; }
 
 .layout {
   display: grid;
-  grid-template-columns: auto minmax(18rem, 24rem);
+  grid-template-columns: max-content minmax(18rem, 24rem);
+  justify-content: start;
   gap: 1.5rem;
   align-items: start;
 }
@@ -126,7 +127,9 @@ button:disabled { opacity: 0.45; cursor: default; }
 
 .side { display: flex; flex-direction: column; }
 
-.turn { font-weight: 600; margin: 0 0 0.5rem; }
+/* место под строку держится заранее: иначе стойка и кнопки съезжают,
+   когда приходит первое состояние */
+.turn { font-weight: 600; margin: 0 0 0.5rem; min-height: 1.5em; }
 .turn-mine { color: var(--ok); }
 
 .rack {
@@ -164,7 +167,8 @@ button:disabled { opacity: 0.45; cursor: default; }
 .preview-bad { color: var(--error); }
 
 .message { margin: 0.3rem 0; }
-.bag { color: var(--muted); font-size: 0.9rem; }
+.bag-row { display: flex; align-items: center; gap: 0.8rem; margin: 0.6rem 0; }
+.bag { color: var(--muted); font-size: 0.9rem; margin: 0; }
 
 .log {
   margin: 0;
@@ -230,7 +234,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 
 /* --- оставшиеся буквы --- */
 
-.letters-toggle { align-self: center; }
+.letters-toggle { margin-left: auto; padding: 0.2rem 0.7rem; font-size: 0.9rem; }
 
 .letters-panel {
   position: fixed;
