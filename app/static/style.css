@@ -437,3 +437,44 @@ button:disabled { opacity: 0.45; cursor: default; }
 }
 
 .cell, .rack-tile { touch-action: none; }
+
+/* --- узкие экраны --- */
+
+/* Панель уходит под доску, когда рядом ей не хватает места. */
+@media (max-width: 1000px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+
+  /* Клетка сжимается под ширину экрана: 15 клеток, 14 зазоров по 2px,
+     по 2px отступа и рамки с каждой стороны — итого 36px сверх клеток.
+     Переопределяется только у доски: стойке и меню нужны крупные фишки. */
+  .board { --cell: min(40px, calc((100vw - 1rem - 36px) / 15)); }
+}
+
+@media (max-width: 700px) {
+  body { padding: 0.5rem; }
+
+  .topbar { gap: 0.3rem 0.8rem; margin-bottom: 0.5rem; }
+  .topbar h1 { font-size: 1.1rem; }
+  .scores { gap: 0.4rem; font-size: 0.9rem; }
+
+  .board .tile { font-size: calc(var(--cell) * 0.5); }
+  .bonus-label { font-size: 0.4rem; }
+  .tile-bonus { display: none; }
+  .score-badge { top: -0.6rem; right: -0.5rem; font-size: 0.6rem; }
+
+  /* стойка и кнопки всегда под рукой, даже если страницу прокрутили */
+  .dock {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    padding: 0.4rem 0 0.4rem;
+    background: var(--bg);
+    box-shadow: 0 -8px 10px -10px rgba(35, 32, 27, 0.5);
+  }
+
+  .turn { margin-bottom: 0.2rem; }
+  .preview { margin-bottom: 0.3rem; font-size: 0.9rem; }
+  .rack { justify-content: center; }
+  .controls { margin: 0.5rem 0 0; gap: 0.3rem; flex-wrap: nowrap; }
+  .controls button { flex: 1 1 0; padding: 0.45rem 0.2rem; font-size: 0.9rem; }
+}
