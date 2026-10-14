@@ -6,7 +6,13 @@ import { enableDragAndDrop } from "./dragdrop.js";
 import { checkGeometry } from "./placement.js";
 import { createRack } from "./rack.js";
 import { getState, setState, subscribe } from "./state.js";
-import { askExchange, renderEndScreen, renderLog, renderUnknownWords } from "./ui.js";
+import {
+  askExchange,
+  renderEndScreen,
+  renderLog,
+  renderUnknownWords,
+  renderUnseen,
+} from "./ui.js";
 import { createSocket } from "./ws.js";
 
 const gameId = document.body.dataset.gameId;
@@ -41,6 +47,10 @@ const elements = {
   blankLetters: document.getElementById("blank-letters"),
   log: document.getElementById("log"),
   unknown: document.getElementById("unknown-words"),
+  lettersToggle: document.getElementById("letters-toggle"),
+  lettersPanel: document.getElementById("letters-panel"),
+  lettersClose: document.getElementById("letters-close"),
+  lettersBody: document.getElementById("letters-body"),
 };
 
 let lastMoveNo = null;
@@ -213,6 +223,7 @@ function renderAll() {
   renderControls(state);
   renderLog(elements.log, state);
   elements.bag.textContent = `В мешке фишек: ${state.bag}`;
+  renderUnseen(elements.lettersBody, state);
   if (state.status === "finished") renderEndScreen(state);
 }
 
@@ -249,6 +260,25 @@ elements.exchange.addEventListener("click", async () => {
   draft.clear();
   const tileIds = await askExchange(state);
   if (tileIds && tileIds.length) socket.send({ type: "exchange", tile_ids: tileIds });
+});
+
+function setLettersOpen(open) {
+  elements.lettersPanel.classList.toggle("letters-open", open);
+  elements.lettersPanel.inert = !open;
+  elements.lettersToggle.setAttribute("aria-expanded", String(open));
+}
+
+elements.lettersToggle.addEventListener("click", () => {
+  setLettersOpen(!elements.lettersPanel.classList.contains("letters-open"));
+});
+elements.lettersClose.addEventListener("click", () => setLettersOpen(false));
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") setLettersOpen(false);
+});
+document.addEventListener("click", (event) => {
+  if (elements.lettersPanel.contains(event.target)) return;
+  if (elements.lettersToggle.contains(event.target)) return;
+  setLettersOpen(false);
 });
 
 const socket = createSocket({

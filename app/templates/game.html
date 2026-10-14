@@ -10,8 +10,18 @@
   <header class="topbar">
     <h1>Эрудит</h1>
     <div id="scores" class="scores"></div>
+    <button id="letters-toggle" type="button" class="letters-toggle"
+            aria-expanded="false" aria-controls="letters-panel">Буквы</button>
     <div id="connection" class="connection">соединение…</div>
   </header>
+
+  <section id="letters-panel" class="letters-panel" aria-label="Оставшиеся буквы" inert>
+    <div class="letters-head">
+      <h2>Оставшиеся буквы</h2>
+      <button id="letters-close" type="button" class="letters-close" aria-label="Закрыть">✕</button>
+    </div>
+    <div id="letters-body"></div>
+  </section>
 
   <main class="layout">
     <section class="board-area">

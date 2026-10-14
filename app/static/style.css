@@ -203,6 +203,62 @@ button:disabled { opacity: 0.45; cursor: default; }
 
 .blank-cancel { display: block; margin-left: auto; }
 
+/* --- оставшиеся буквы --- */
+
+.letters-toggle { align-self: center; }
+
+.letters-panel {
+  position: fixed;
+  z-index: 5;
+  top: 0;
+  left: 50%;
+  width: min(34rem, calc(100vw - 2rem));
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 0.8rem 1rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 6px 18px rgba(35, 32, 27, 0.18);
+  transform: translate(-50%, -110%);
+  visibility: hidden;
+  transition: transform 0.2s ease, visibility 0s linear 0.2s;
+}
+
+.letters-panel.letters-open {
+  transform: translate(-50%, 0);
+  visibility: visible;
+  transition: transform 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .letters-panel, .letters-panel.letters-open { transition: none; }
+}
+
+.letters-head { display: flex; align-items: center; justify-content: space-between; }
+.letters-head h2 { margin: 0; }
+.letters-close { padding: 0.1rem 0.5rem; }
+
+.unseen-summary { margin: 0.4rem 0 0.7rem; color: var(--muted); font-size: 0.9rem; }
+
+.unseen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.2rem, 1fr));
+  gap: 0.5rem 0.3rem;
+}
+
+.unseen-item { display: flex; flex-direction: column; align-items: center; }
+
+.unseen-tile {
+  position: relative;
+  width: var(--cell);
+  height: var(--cell);
+}
+
+.unseen-count { font-size: 0.8rem; color: var(--muted); }
+.unseen-gone { opacity: 0.3; }
+
 /* --- журнал, обмен, конец партии --- */
 
 .log-entry { margin-bottom: 0.2rem; }
