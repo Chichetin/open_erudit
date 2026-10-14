@@ -99,6 +99,9 @@ class Game:
         self.move_no = 0
         self.status: Status = "waiting"
         self.log: list[dict] = []
+        # Реванш: {"game_id": ..., "tokens": {id игрока здесь: его токен там}}.
+        # Заполняет сервер — движок о других партиях ничего не знает.
+        self.rematch: dict | None = None
 
     # --- участники ------------------------------------------------------
 

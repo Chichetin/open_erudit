@@ -35,6 +35,7 @@ def to_dict(game: Game) -> dict:
         "pass_streak": game.pass_streak,
         "move_no": game.move_no,
         "log": game.log,
+        "rematch": game.rematch,
         "players": [
             {
                 "id": p.id,
@@ -73,6 +74,7 @@ def from_dict(data: dict, tileset: TileSet, dictionary: WordSource) -> Game:
     game.pass_streak = int(data["pass_streak"])
     game.move_no = int(data["move_no"])
     game.log = list(data.get("log", []))
+    game.rematch = data.get("rematch")
     game.players = [
         Player(
             id=p["id"],

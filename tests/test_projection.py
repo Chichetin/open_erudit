@@ -80,3 +80,12 @@ def test_unseen_lists_every_letter_even_when_gone(tileset, dictionary):
     letters = [item["letter"] for item in state["unseen"]]
     assert letters == state["alphabet"] + [None]
     assert sum(_unseen_counts(state).values()) == tileset.total_tiles - 7
+
+
+def test_rematch_shows_only_own_token(tileset, dictionary):
+    game = make_game(tileset, dictionary)
+    assert for_player(game, "p1")["rematch"] is None
+    game.rematch = {"game_id": "fedcba9876", "tokens": {"p1": "свой-токен", "p2": "чужой-токен"}}
+    state = for_player(game, "p1")
+    assert state["rematch"] == {"game_id": "fedcba9876", "token": "свой-токен"}
+    assert "чужой-токен" not in repr(state)

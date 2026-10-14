@@ -212,6 +212,34 @@ def test_pass_and_exchange(client, game):
         assert len(state["rack"]) == 7
 
 
+def test_rematch_reaches_both_players(client, game):
+    for _ in range(5):
+        game.do_pass(game.players[game.current].id)
+    with client.websocket_connect(f"/g/{game.id}/ws") as first:
+        hello(first, game.players[0].token)
+        with client.websocket_connect(f"/g/{game.id}/ws") as second:
+            hello(second, game.players[1].token)
+            recv(first, "presence")
+            # шестой пас подряд заканчивает партию
+            game.current = 0
+            first.send_json({"type": "pass"})
+            assert recv(first, "state")["status"] == "finished"
+            recv(second, "state")
+
+            first.send_json({"type": "rematch"})
+            mine = recv(first, "state")["rematch"]
+            theirs = recv(second, "state")["rematch"]
+    assert mine["game_id"] == theirs["game_id"]
+    assert mine["token"] != theirs["token"]
+
+
+def test_rematch_during_the_game_is_an_error(client, game):
+    with client.websocket_connect(f"/g/{game.id}/ws") as socket:
+        hello(socket, game.players[0].token)
+        socket.send_json({"type": "rematch"})
+        assert recv(socket, "error")["message"]
+
+
 def test_journal_arrives_inside_state(client, game):
     # отдельного сообщения на запись журнала нет: журнал целиком лежит в state
     with client.websocket_connect(f"/g/{game.id}/ws") as socket:

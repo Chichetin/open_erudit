@@ -45,7 +45,18 @@ def for_player(game: Game, player_id: str) -> dict:
         "pass_streak": game.pass_streak,
         "log": list(game.log),
         "winners": [p.id for p in game.winners()] if game.status == "finished" else [],
+        "rematch": _rematch(game, me),
     }
+
+
+def _rematch(game: Game, me: Player | None) -> dict | None:
+    """Ссылка на реванш — только со своим токеном, чужой не уходит никогда."""
+    if game.rematch is None or me is None:
+        return None
+    token = game.rematch["tokens"].get(me.id)
+    if token is None:
+        return None
+    return {"game_id": game.rematch["game_id"], "token": token}
 
 
 def _player(player: Player, me: Player | None) -> dict:

@@ -91,3 +91,47 @@ def test_too_many_games_rejected(tileset, dictionary, tmp_path):
     registry.create()
     with pytest.raises(RuntimeError):
         registry.create()
+
+
+# --- реванш ---------------------------------------------------------------------
+
+
+def finish(game):
+    for _ in range(6):
+        game.do_pass(game.players[game.current].id)
+    assert game.status == "finished"
+
+
+def test_rematch_swaps_who_moves_first(registry):
+    game = registry.create(("Аня", "Борис"))
+    finish(game)
+    new = registry.create_rematch(game)
+    assert new.status == "active"
+    assert [p.name for p in new.players] == ["Борис", "Аня"]
+
+
+def test_rematch_gives_each_player_a_token_under_their_own_name(registry):
+    game = registry.create(("Аня", "Борис"))
+    finish(game)
+    new = registry.create_rematch(game)
+    for old in game.players:
+        found = registry.authenticate(new.id, game.rematch["tokens"][old.id])
+        assert found is not None
+        assert found[1].name == old.name
+
+
+def test_rematch_is_created_once(registry):
+    game = registry.create()
+    finish(game)
+    first = registry.create_rematch(game)
+    assert registry.create_rematch(game) is first
+    assert len(registry.games) == 2
+
+
+def test_rematch_of_an_active_game_is_refused(registry):
+    from erudit.rules import MoveError
+
+    game = registry.create()
+    with pytest.raises(MoveError):
+        registry.create_rematch(game)
+    assert game.rematch is None

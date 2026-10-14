@@ -162,3 +162,14 @@ def test_snapshot_is_written_after_every_move(tileset, dictionary, tmp_path):
         recv(socket, "state")
 
     assert json.loads(snapshot.read_text(encoding="utf-8"))["pass_streak"] == 1
+
+
+def test_rematch_link_survives_reload(tileset, dictionary, tmp_path):
+    game = Game("abcdef1234", tileset, dictionary, random.Random(3))
+    game.add_player("Первый")
+    game.add_player("Второй")
+    game.start()
+    game.rematch = {"game_id": "fedcba9876", "tokens": {"p1": "т1", "p2": "т2"}}
+    storage.save(game, tmp_path)
+    restored = storage.load_all(tmp_path, tileset, dictionary)["abcdef1234"]
+    assert restored.rematch == game.rematch

@@ -15,6 +15,7 @@ from erudit import storage
 from erudit.config import GAMES_DIR, TileSet, load_tileset
 from erudit.dictionary import Dictionary, load_dictionary
 from erudit.game import Game, Player
+from erudit.rules import MoveError
 
 GAME_ID_RE = re.compile(r"^[a-z0-9]{8,16}$")
 
@@ -70,6 +71,33 @@ class GameRegistry:
         self.games[game_id] = game
         self.save(game)
         return game
+
+    def create_rematch(self, game: Game) -> Game:
+        """Новая партия с теми же игроками; первым ходит тот, кто был вторым.
+
+        Повторный запрос возвращает уже созданную партию — оба игрока могут
+        нажать кнопку одновременно.
+        """
+        if game.status != "finished":
+            raise MoveError("Реванш — только после конца партии")
+        if game.rematch is not None:
+            existing = self.get(game.rematch["game_id"])
+            if existing is not None:
+                return existing
+
+        try:
+            new = self.create(tuple(player.name for player in reversed(game.players)))
+        except RuntimeError as exc:
+            raise MoveError(str(exc)) from exc
+        game.rematch = {
+            "game_id": new.id,
+            "tokens": {
+                old.id: fresh.token
+                for old, fresh in zip(game.players, reversed(new.players), strict=True)
+            },
+        }
+        self.save(game)
+        return new
 
     def get(self, game_id: str) -> Game | None:
         if not is_valid_game_id(game_id):

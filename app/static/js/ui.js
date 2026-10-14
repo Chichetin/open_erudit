@@ -133,8 +133,20 @@ export function askExchange(state) {
   });
 }
 
-export function renderEndScreen(state) {
-  if (document.getElementById("end-screen")) return;
+export function rematchUrl(rematch) {
+  return `/g/${rematch.game_id}#${rematch.token}`;
+}
+
+// Экран перерисовывается на каждое состояние: реванш может прийти от
+// соперника уже после того, как экран показан.
+export function renderEndScreen(state, { rematchRequested, onRematch }) {
+  let screen = document.getElementById("end-screen");
+  if (!screen) {
+    screen = document.createElement("div");
+    screen.id = "end-screen";
+    screen.className = "end-screen";
+    document.querySelector(".side").prepend(screen);
+  }
 
   const winners = state.players.filter((player) => state.winners.includes(player.id));
   const verdict =
@@ -143,10 +155,6 @@ export function renderEndScreen(state) {
       : winners[0]?.is_you
         ? "Вы выиграли"
         : `Выиграл ${winners[0]?.name ?? "никто"}`;
-
-  const screen = document.createElement("div");
-  screen.id = "end-screen";
-  screen.className = "end-screen";
 
   const title = document.createElement("h2");
   title.textContent = `Партия окончена. ${verdict}`;
@@ -159,10 +167,26 @@ export function renderEndScreen(state) {
     scores.append(item);
   }
 
-  const again = document.createElement("a");
-  again.href = "/";
-  again.textContent = "Новая партия";
+  const actions = document.createElement("div");
+  actions.className = "end-actions";
+  if (state.rematch) {
+    const go = document.createElement("a");
+    go.className = "button-link";
+    go.href = rematchUrl(state.rematch);
+    go.textContent = "Перейти к реваншу";
+    actions.append(go);
+  } else {
+    const again = document.createElement("button");
+    again.type = "button";
+    again.textContent = rematchRequested ? "Создаём…" : "Сыграть ещё";
+    again.disabled = rematchRequested;
+    again.addEventListener("click", onRematch);
+    actions.append(again);
+  }
+  const fresh = document.createElement("a");
+  fresh.href = "/";
+  fresh.textContent = "Новая партия с нуля";
+  actions.append(fresh);
 
-  screen.append(title, scores, again);
-  document.querySelector(".side").prepend(screen);
+  screen.replaceChildren(title, scores, actions);
 }

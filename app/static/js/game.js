@@ -14,6 +14,7 @@ import {
   renderLog,
   renderUnknownWords,
   renderUnseen,
+  rematchUrl,
 } from "./ui.js";
 import { createSocket } from "./ws.js";
 
@@ -57,6 +58,7 @@ const elements = {
 
 let lastMoveNo = null;
 let draftTimer = null;
+let rematchRequested = false;
 let scoreHint = null; // очки за текущий черновик, пока сервер считает — null
 
 const draft = createDraft({ onChange: onDraftChange });
@@ -259,7 +261,16 @@ function renderAll() {
   renderLog(elements.log, state);
   elements.bag.textContent = `В мешке фишек: ${state.bag}`;
   renderUnseen(elements.lettersBody, state);
-  if (state.status === "finished") renderEndScreen(state);
+  if (state.status === "finished") {
+    renderEndScreen(state, {
+      rematchRequested,
+      onRematch() {
+        rematchRequested = true;
+        socket.send({ type: "rematch" });
+        renderAll();
+      },
+    });
+  }
 }
 
 subscribe((state) => {
@@ -271,6 +282,11 @@ subscribe((state) => {
     showMessage(null);
   }
   lastMoveNo = state.move_no;
+  // реванш попросили отсюда — сразу уводим в новую партию
+  if (rematchRequested && state.rematch) {
+    location.assign(rematchUrl(state.rematch));
+    return;
+  }
   notifier.update(state);
   renderAll();
 });
@@ -355,6 +371,7 @@ const socket = createSocket({
         showPreview(message.error, "bad");
       }
     } else if (message.type === "error") {
+      rematchRequested = false;
       showMessage(message.message);
       // отказ из-за незнакомого слова — единственный, который игрок может
       // снять сам: словарь правится по ходу партии, без подтверждения

@@ -172,6 +172,8 @@ async def _handle(
             game.do_pass(player.id)
         elif kind == "allow_word":
             game.allow_word(parse_word(message.get("word")), player.id)
+        elif kind == "rematch":
+            registry.create_rematch(game)
         elif kind == "hello":
             await hub.send_state(game, player.id, socket)
             return
