@@ -57,6 +57,7 @@ const elements = {
 
 let lastMoveNo = null;
 let draftTimer = null;
+let scoreHint = null; // очки за текущий черновик, пока сервер считает — null
 
 const draft = createDraft({ onChange: onDraftChange });
 const board = createBoard(document.getElementById("board"), { onCellClick });
@@ -193,6 +194,7 @@ function onRackDrop({ tileId, from, index }) {
 }
 
 function onDraftChange(placements) {
+  scoreHint = null;
   renderAll();
   clearTimeout(draftTimer);
 
@@ -249,7 +251,7 @@ function renderControls(state) {
 function renderAll() {
   const state = getState();
   if (!state) return;
-  board.render(state, draft);
+  board.render(state, draft, scoreHint);
   rack.render(state, draft);
   renderScores(state);
   renderTurn(state);
@@ -347,6 +349,8 @@ const socket = createSocket({
       if (message.valid) {
         const words = message.words.map(([word, points]) => `${word} — ${points}`);
         showPreview(`${words.join(", ")}. Итого ${message.total}`, "ok");
+        scoreHint = message.total;
+        renderAll();
       } else {
         showPreview(message.error, "bad");
       }

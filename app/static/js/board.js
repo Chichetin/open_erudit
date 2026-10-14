@@ -53,12 +53,31 @@ export function createBoard(root, { onCellClick }) {
     return tile;
   }
 
+  // Бонус действует только в ход, когда клетку закрыли, — поэтому метку
+  // показываем на черновой фишке, а на уже сыгранных нет.
+  function bonusTag(bonus) {
+    return Object.assign(document.createElement("span"), {
+      className: `tile-bonus ${BONUS_CLASS[bonus]}`,
+      textContent: BONUS_LABEL[bonus],
+    });
+  }
+
+  function lastDrafted(draft) {
+    const items = draft ? draft.list() : [];
+    if (!items.length) return null;
+    return items.reduce((last, item) =>
+      item.row > last.row || (item.row === last.row && item.col > last.col) ? item : last
+    );
+  }
+
   return {
     cellElement(row, col) {
       return cells[row * size + col];
     },
-    render(state, draft) {
+    // scoreHint — очки за черновик, если сервер его уже посчитал
+    render(state, draft, scoreHint = null) {
       if (!cells.length) build(state);
+      const last = scoreHint === null ? null : lastDrafted(draft);
       for (let row = 0; row < size; row += 1) {
         for (let col = 0; col < size; col += 1) {
           const cell = cells[row * size + col];
@@ -74,9 +93,18 @@ export function createBoard(root, { onCellClick }) {
               })
             );
           } else if (drafted) {
-            cell.replaceChildren(
-              tileElement(drafted.letter, { isBlank: drafted.isBlank, isNew: true })
-            );
+            const tile = tileElement(drafted.letter, { isBlank: drafted.isBlank, isNew: true });
+            const bonus = state.bonuses[row][col];
+            if (BONUS_LABEL[bonus]) tile.append(bonusTag(bonus));
+            if (drafted === last) {
+              tile.append(
+                Object.assign(document.createElement("span"), {
+                  className: "score-badge",
+                  textContent: `+${scoreHint}`,
+                })
+              );
+            }
+            cell.replaceChildren(tile);
           } else {
             const bonus = state.bonuses[row][col];
             cell.replaceChildren(
