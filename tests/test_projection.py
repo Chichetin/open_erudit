@@ -4,6 +4,7 @@
 """
 
 import random
+from collections import Counter
 
 from erudit.game import Game
 from erudit.projection import for_player
@@ -59,3 +60,23 @@ def test_spectator_without_player_id_sees_no_rack(tileset, dictionary):
     state = for_player(game, "нет такого")
     assert state["rack"] == []
     assert all(not p["is_you"] for p in state["players"])
+
+
+def _unseen_counts(state):
+    return {item["letter"]: item["count"] for item in state["unseen"]}
+
+
+def test_unseen_is_bag_plus_opponent_rack(tileset, dictionary):
+    game = make_game(tileset, dictionary)
+    for me, opponent in ((game.players[0], game.players[1]), (game.players[1], game.players[0])):
+        expected = Counter(t.letter for t in game.bag.tiles() + opponent.rack)
+        counts = _unseen_counts(for_player(game, me.id))
+        assert {k: v for k, v in counts.items() if v} == dict(expected)
+
+
+def test_unseen_lists_every_letter_even_when_gone(tileset, dictionary):
+    game = make_game(tileset, dictionary)
+    state = for_player(game, "p1")
+    letters = [item["letter"] for item in state["unseen"]]
+    assert letters == state["alphabet"] + [None]
+    assert sum(_unseen_counts(state).values()) == tileset.total_tiles - 7

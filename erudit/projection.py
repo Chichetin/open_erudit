@@ -2,11 +2,14 @@
 
 Единственное место, где состояние превращается в то, что уходит игроку.
 Своя стойка видна целиком, чужая — только количеством, мешок — только
-количеством, токенов нет никогда. Никакой другой код не сериализует Game
+количеством, токенов нет никогда. Невышедшие буквы — мешок вместе с
+чужой стойкой, без разбивки: их любой игрок и так сосчитает по доске. Никакой другой код не сериализует Game
 для отправки, поэтому приватность проверяется одним тестом — на эту функцию.
 """
 
 from __future__ import annotations
+
+from collections import Counter
 
 from erudit.game import Game, Player
 from erudit.tiles import Tile
@@ -37,6 +40,7 @@ def for_player(game: Game, player_id: str) -> dict:
         "rack": [tile_to_dict(tile) for tile in me.rack] if me else [],
         "players": [_player(p, me) for p in game.players],
         "bag": len(game.bag),
+        "unseen": _unseen(game, me),
         "move_no": game.move_no,
         "pass_streak": game.pass_streak,
         "log": list(game.log),
@@ -53,6 +57,22 @@ def _player(player: Player, me: Player | None) -> dict:
         "connected": player.connected,
         "is_you": me is not None and player.id == me.id,
     }
+
+
+def _unseen(game: Game, me: Player | None) -> list[dict]:
+    """Сколько каких фишек ещё не вышло — с точки зрения этого игрока."""
+    hidden = list(game.bag.tiles())
+    for player in game.players:
+        if player is not me:
+            hidden.extend(player.rack)
+    counts = Counter(tile.letter for tile in hidden)
+
+    specs = [(spec.letter, spec.value) for spec in game.tileset.tiles]
+    specs.append((None, game.tileset.blank_value))
+    return [
+        {"letter": letter, "value": value, "count": counts[letter]}
+        for letter, value in specs
+    ]
 
 
 def _board(game: Game, last_move_no: int) -> list[list[dict | None]]:
