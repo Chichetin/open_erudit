@@ -30,25 +30,25 @@ export function enableDragAndDrop({ boardRoot, rackRoot, onDrop, onPickUp }) {
     return target?.closest(".cell") ?? null;
   }
 
+  // Копия фишки появляется только после сдвига за порог: если создавать её
+  // на нажатие, каждый обычный тап заставляет фишку дёрнуться.
   function start(event, source) {
-    const element = source.element;
-    const box = element.getBoundingClientRect();
+    const box = source.element.getBoundingClientRect();
     dragging = {
       ...source,
-      ghost: ghostFor(element),
+      ghost: null,
       offsetX: event.clientX - box.left,
       offsetY: event.clientY - box.top,
       moved: false,
       startX: event.clientX,
       startY: event.clientY,
     };
-    moveGhost(event);
   }
 
   function finish(event) {
     if (!dragging) return;
     const cell = dragging.moved ? cellUnder(event) : null;
-    dragging.ghost.remove();
+    dragging.ghost?.remove();
     const source = dragging;
     dragging = null;
 
@@ -99,6 +99,7 @@ export function enableDragAndDrop({ boardRoot, rackRoot, onDrop, onPickUp }) {
         Math.abs(event.clientY - dragging.startY) > DRAG_THRESHOLD_PX;
       if (!far) return;
       dragging.moved = true;
+      dragging.ghost = ghostFor(dragging.element);
     }
     event.preventDefault();
     moveGhost(event);
