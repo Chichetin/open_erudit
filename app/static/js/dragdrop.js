@@ -6,7 +6,7 @@
 
 const DRAG_THRESHOLD_PX = 4;
 
-export function enableDragAndDrop({ boardRoot, rackRoot, onDrop, onPickUp }) {
+export function enableDragAndDrop({ boardRoot, rackRoot, onDrop, onRackDrop, onPickUp }) {
   let dragging = null;
 
   function ghostFor(element) {
@@ -23,11 +23,41 @@ export function enableDragAndDrop({ boardRoot, rackRoot, onDrop, onPickUp }) {
     dragging.ghost.style.top = `${event.clientY - dragging.offsetY}px`;
   }
 
-  function cellUnder(event) {
+  function elementUnder(event) {
     dragging.ghost.style.visibility = "hidden";
     const target = document.elementFromPoint(event.clientX, event.clientY);
     dragging.ghost.style.visibility = "";
-    return target?.closest(".cell") ?? null;
+    return target;
+  }
+
+  // Место на стойке под курсором: сколько остальных фишек левее него.
+  function rackIndexAt(clientX, tileId) {
+    const others = [...rackRoot.querySelectorAll(".rack-tile")].filter(
+      (element) => Number(element.dataset.tileId) !== tileId
+    );
+    const index = others.filter((element) => {
+      const box = element.getBoundingClientRect();
+      return box.left + box.width / 2 < clientX;
+    }).length;
+    return { index, others };
+  }
+
+  function clearRackMarks() {
+    rackRoot.classList.remove("rack-drop");
+    for (const element of rackRoot.querySelectorAll(".rack-insert-before, .rack-insert-after")) {
+      element.classList.remove("rack-insert-before", "rack-insert-after");
+    }
+  }
+
+  // Подсказка, куда встанет фишка, если отпустить её над стойкой.
+  function markRack(event) {
+    clearRackMarks();
+    const target = elementUnder(event);
+    if (!target || !rackRoot.contains(target)) return;
+    rackRoot.classList.add("rack-drop");
+    const { index, others } = rackIndexAt(event.clientX, dragging.tileId);
+    if (index < others.length) others[index].classList.add("rack-insert-before");
+    else others.at(-1)?.classList.add("rack-insert-after");
   }
 
   // Копия фишки появляется только после сдвига за порог: если создавать её
@@ -47,12 +77,22 @@ export function enableDragAndDrop({ boardRoot, rackRoot, onDrop, onPickUp }) {
 
   function finish(event) {
     if (!dragging) return;
-    const cell = dragging.moved ? cellUnder(event) : null;
+    const target = dragging.moved ? elementUnder(event) : null;
     dragging.ghost?.remove();
+    clearRackMarks();
     const source = dragging;
     dragging = null;
 
     if (!source.moved) return; // это был обычный тап — им занимается rack.js
+    if (target && rackRoot.contains(target)) {
+      onRackDrop({
+        tileId: source.tileId,
+        from: source.from,
+        index: rackIndexAt(event.clientX, source.tileId).index,
+      });
+      return;
+    }
+    const cell = target?.closest(".cell");
     if (!cell) {
       source.onCancel?.();
       return;
@@ -103,6 +143,7 @@ export function enableDragAndDrop({ boardRoot, rackRoot, onDrop, onPickUp }) {
     }
     event.preventDefault();
     moveGhost(event);
+    markRack(event);
   });
 
   window.addEventListener("pointerup", finish);

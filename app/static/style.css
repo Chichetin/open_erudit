@@ -150,6 +150,11 @@ button:disabled { opacity: 0.45; cursor: default; }
 }
 
 .tile-selected { outline: 3px solid var(--accent); }
+
+/* куда встанет фишка, если отпустить её над стойкой */
+.rack-drop { background: #ddd0b3; }
+.rack-insert-before { box-shadow: -5px 0 0 -1px var(--accent); }
+.rack-insert-after { box-shadow: 5px 0 0 -1px var(--accent); }
 .tile-used { opacity: 0.3; }
 
 .tile-value {

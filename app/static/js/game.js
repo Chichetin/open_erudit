@@ -59,7 +59,10 @@ let draftTimer = null;
 
 const draft = createDraft({ onChange: onDraftChange });
 const board = createBoard(document.getElementById("board"), { onCellClick });
-const rack = createRack(document.getElementById("rack"), { onSelect: renderAll });
+const rack = createRack(document.getElementById("rack"), {
+  onSelect: renderAll,
+  storageKey: `erudit:${gameId}:rack`,
+});
 const cellMenu = createCellMenu({ onPick: putFromRack });
 
 function showMessage(text, kind = "error") {
@@ -172,6 +175,18 @@ async function onDrop({ tileId, from, row, col }) {
       letter: existing.letter,
       isBlank: existing.isBlank,
     });
+  }
+}
+
+// Фишку перетащили на стойку: со стойки — меняем порядок, с доски —
+// возвращаем из черновика на выбранное место.
+function onRackDrop({ tileId, from, index }) {
+  cellMenu.close();
+  rack.move(tileId, index);
+  if (from === "rack") {
+    renderAll();
+  } else {
+    draft.remove(from.row, from.col);
   }
 }
 
@@ -349,6 +364,7 @@ enableDragAndDrop({
   boardRoot: document.getElementById("board"),
   rackRoot: document.getElementById("rack"),
   onDrop,
+  onRackDrop,
   onPickUp: (row, col) => draft.at(row, col),
 });
 
