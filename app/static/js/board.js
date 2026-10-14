@@ -54,6 +54,9 @@ export function createBoard(root, { onCellClick }) {
   }
 
   return {
+    cellElement(row, col) {
+      return cells[row * size + col];
+    },
     render(state, draft) {
       if (!cells.length) build(state);
       for (let row = 0; row < size; row += 1) {

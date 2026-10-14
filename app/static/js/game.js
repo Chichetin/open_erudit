@@ -1,6 +1,7 @@
 // Точка входа игрового экрана: соединение, состояние, черновик, отрисовка.
 
 import { createBoard } from "./board.js";
+import { createCellMenu } from "./cellmenu.js";
 import { createDraft } from "./draft.js";
 import { enableDragAndDrop } from "./dragdrop.js";
 import { checkGeometry } from "./placement.js";
@@ -59,6 +60,7 @@ let draftTimer = null;
 const draft = createDraft({ onChange: onDraftChange });
 const board = createBoard(document.getElementById("board"), { onCellClick });
 const rack = createRack(document.getElementById("rack"), { onSelect: renderAll });
+const cellMenu = createCellMenu({ onPick: putFromRack });
 
 function showMessage(text, kind = "error") {
   elements.message.textContent = text ?? "";
@@ -125,22 +127,36 @@ async function onCellClick(row, col) {
   const state = getState();
   if (!state || state.status !== "active") return;
 
+  const menuWasHere = cellMenu.isOpenAt(row, col);
+  cellMenu.close();
+
   if (draft.at(row, col)) {
     draft.remove(row, col);
     return;
   }
   if (!canPlaceAt(state, row, col)) return;
 
+  // фишка уже выбрана на стойке — ставим её, как раньше, без меню
   const tileId = rack.selected;
-  if (tileId === null) {
-    showMessage("Сначала выберите фишку на стойке");
+  if (tileId !== null) {
+    await putFromRack(row, col, tileId);
     return;
   }
-  await putFromRack(row, col, tileId);
+  if (menuWasHere) return; // повторный клик по той же клетке закрывает меню
+
+  const used = draft.usedTileIds();
+  const free = state.rack.filter((tile) => !used.has(tile.id));
+  if (free.length === 0) {
+    showMessage("Все фишки уже на доске");
+    return;
+  }
+  showMessage(null);
+  cellMenu.open(board.cellElement(row, col), row, col, free);
 }
 
 // Перетаскивание пишет в тот же черновик, что и тап.
 async function onDrop({ tileId, from, row, col }) {
+  cellMenu.close();
   const state = getState();
   if (!canPlaceAt(state, row, col)) return;
 
@@ -230,6 +246,7 @@ function renderAll() {
 subscribe((state) => {
   // ход состоялся — черновик больше не наш
   if (lastMoveNo !== null && state.move_no !== lastMoveNo) {
+    cellMenu.close();
     draft.clear();
     showPreview(null);
     showMessage(null);
@@ -244,6 +261,7 @@ elements.commit.addEventListener("click", () => {
 });
 
 elements.reset.addEventListener("click", () => {
+  cellMenu.close();
   draft.clear();
   showMessage(null);
 });

@@ -175,6 +175,31 @@ button:disabled { opacity: 0.45; cursor: default; }
   color: var(--muted);
 }
 
+/* --- меню фишек над клеткой --- */
+
+.cell-menu {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  background: #e6dcc6;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(35, 32, 27, 0.25);
+}
+
+.cell-menu[hidden] { display: none; }
+.cell-target { outline: 3px solid var(--accent); outline-offset: -3px; }
+
+.menu-tile {
+  position: relative;
+  width: var(--cell);
+  height: var(--cell);
+  padding: 0;
+  cursor: pointer;
+}
+
 /* --- диалог выбора буквы для пустышки --- */
 
 .blank-dialog {
