@@ -74,9 +74,11 @@ export function createBoard(root, { onCellClick }) {
     cellElement(row, col) {
       return cells[row * size + col];
     },
-    // scoreHint — очки за черновик, если сервер его уже посчитал
-    render(state, draft, scoreHint = null) {
+    // scoreHint — очки за черновик, если сервер его уже посчитал;
+    // opponentDraft — что сейчас собирает соперник, если партия это показывает
+    render(state, draft, scoreHint = null, opponentDraft = []) {
       if (!cells.length) build(state);
+      const theirs = new Map(opponentDraft.map((item) => [`${item.row},${item.col}`, item]));
       const last = scoreHint === null ? null : lastDrafted(draft);
       for (let row = 0; row < size; row += 1) {
         for (let col = 0; col < size; col += 1) {
@@ -104,6 +106,11 @@ export function createBoard(root, { onCellClick }) {
                 })
               );
             }
+            cell.replaceChildren(tile);
+          } else if (theirs.has(`${row},${col}`)) {
+            const item = theirs.get(`${row},${col}`);
+            const tile = tileElement(item.letter, { isBlank: item.is_blank });
+            tile.classList.add("tile-opponent");
             cell.replaceChildren(tile);
           } else {
             const bonus = state.bonuses[row][col];

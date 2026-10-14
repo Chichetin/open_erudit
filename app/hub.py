@@ -51,6 +51,11 @@ class Hub:
         for player_id, socket in list(self._connections.get(game_id, [])):
             await self._safe_send(game_id, player_id, socket, payload)
 
+    async def broadcast_others(self, game_id: str, player_id: str, payload: dict) -> None:
+        for other_id, socket in list(self._connections.get(game_id, [])):
+            if other_id != player_id:
+                await self._safe_send(game_id, other_id, socket, payload)
+
     async def _safe_send(
         self, game_id: str, player_id: str, socket: WebSocket, payload: dict
     ) -> None:

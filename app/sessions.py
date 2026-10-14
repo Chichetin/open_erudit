@@ -54,7 +54,9 @@ class GameRegistry:
     def save(self, game: Game) -> None:
         storage.save(game, self.games_dir)
 
-    def create(self, names: tuple[str, ...] = DEFAULT_NAMES) -> Game:
+    def create(
+        self, names: tuple[str, ...] = DEFAULT_NAMES, show_drafts: bool = False
+    ) -> Game:
         if len(self.games) >= self.max_games:
             self._drop_oldest_finished()
         if len(self.games) >= self.max_games:
@@ -65,6 +67,7 @@ class GameRegistry:
             game_id = new_game_id()
 
         game = Game(game_id, self.tileset, self.dictionary)
+        game.show_drafts = show_drafts
         for name in names:
             game.add_player(name)
         game.start()
@@ -86,7 +89,10 @@ class GameRegistry:
                 return existing
 
         try:
-            new = self.create(tuple(player.name for player in reversed(game.players)))
+            new = self.create(
+                tuple(player.name for player in reversed(game.players)),
+                show_drafts=game.show_drafts,
+            )
         except RuntimeError as exc:
             raise MoveError(str(exc)) from exc
         game.rematch = {

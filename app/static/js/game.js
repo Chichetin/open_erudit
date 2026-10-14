@@ -59,7 +59,8 @@ const elements = {
 let lastMoveNo = null;
 let draftTimer = null;
 let rematchRequested = false;
-let scoreHint = null; // очки за текущий черновик, пока сервер считает — null
+let scoreHint = null;
+let opponentDraft = []; // очки за текущий черновик, пока сервер считает — null
 
 const draft = createDraft({ onChange: onDraftChange });
 const board = createBoard(document.getElementById("board"), { onCellClick });
@@ -195,6 +196,10 @@ function onRackDrop({ tileId, from, index }) {
   }
 }
 
+function shareDraft() {
+  if (getState()?.show_drafts) socket.send({ type: "share_draft", placements: draft.payload() });
+}
+
 function onDraftChange(placements) {
   scoreHint = null;
   renderAll();
@@ -202,6 +207,7 @@ function onDraftChange(placements) {
 
   if (placements.length === 0) {
     showPreview(null);
+    shareDraft();
     return;
   }
 
@@ -213,10 +219,10 @@ function onDraftChange(placements) {
   }
 
   showPreview("считаем…");
-  draftTimer = setTimeout(
-    () => socket.send({ type: "draft", placements: draft.payload() }),
-    DRAFT_DEBOUNCE_MS
-  );
+  draftTimer = setTimeout(() => {
+    socket.send({ type: "draft", placements: draft.payload() });
+    shareDraft();
+  }, DRAFT_DEBOUNCE_MS);
 }
 
 function renderScores(state) {
@@ -253,7 +259,7 @@ function renderControls(state) {
 function renderAll() {
   const state = getState();
   if (!state) return;
-  board.render(state, draft, scoreHint);
+  board.render(state, draft, scoreHint, opponentDraft);
   rack.render(state, draft);
   renderScores(state);
   renderTurn(state);
@@ -276,6 +282,7 @@ function renderAll() {
 subscribe((state) => {
   // ход состоялся — черновик больше не наш
   if (lastMoveNo !== null && state.move_no !== lastMoveNo) {
+    opponentDraft = [];
     cellMenu.close();
     draft.clear();
     showPreview(null);
@@ -361,6 +368,9 @@ const socket = createSocket({
           connected: online.get(p.id) ?? p.connected,
         })),
       });
+    } else if (message.type === "opponent_draft") {
+      opponentDraft = message.placements;
+      renderAll();
     } else if (message.type === "preview") {
       if (message.valid) {
         const words = message.words.map(([word, points]) => `${word} — ${points}`);

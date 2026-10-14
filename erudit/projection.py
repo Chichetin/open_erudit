@@ -47,6 +47,7 @@ def for_player(game: Game, player_id: str) -> dict:
         "log": list(game.log),
         "winners": [p.id for p in game.winners()] if game.status == "finished" else [],
         "rematch": _rematch(game, me),
+        "show_drafts": game.show_drafts,
         "stats": summarize(game) if game.status == "finished" else None,
     }
 

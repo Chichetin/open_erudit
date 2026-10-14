@@ -102,6 +102,8 @@ class Game:
         # Реванш: {"game_id": ..., "tokens": {id игрока здесь: его токен там}}.
         # Заполняет сервер — движок о других партиях ничего не знает.
         self.rematch: dict | None = None
+        # видят ли игроки черновик того, кто сейчас ходит
+        self.show_drafts = False
 
     # --- участники ------------------------------------------------------
 
@@ -231,6 +233,40 @@ class Game:
         )
         if not self._maybe_finish():
             self._advance()
+
+    def draft_view(self, player_id: str, placements: list[Placement]) -> list[dict]:
+        """Черновик игрока в том виде, в каком его можно показать сопернику.
+
+        Только буквы и клетки, без id фишек; всё, что не могло бы стать
+        ходом (чужая фишка, занятая клетка, не та буква), отбрасывается.
+        """
+        if self.status != "active" or self.players[self.current].id != player_id:
+            return []
+        by_id = {tile.id: tile for tile in self.player_by_id(player_id).rack}
+        view: list[dict] = []
+        seen_tiles: set[int] = set()
+        seen_cells: set[tuple[int, int]] = set()
+        for placement in placements:
+            tile = by_id.get(placement.tile_id)
+            cell = (placement.row, placement.col)
+            if tile is None or tile.id in seen_tiles or cell in seen_cells:
+                continue
+            if not self.board.in_bounds(placement.row, placement.col):
+                continue
+            if self.board.get(placement.row, placement.col) is not None:
+                continue
+            letter = placement.letter.upper()
+            if tile.is_blank:
+                if not self._is_known_letter(letter):
+                    continue
+            elif letter != tile.letter:
+                continue
+            seen_tiles.add(tile.id)
+            seen_cells.add(cell)
+            view.append(
+                {"row": placement.row, "col": placement.col, "letter": letter, "is_blank": tile.is_blank}
+            )
+        return view
 
     def allow_word(self, word: str, player_id: str) -> None:
         add = getattr(self.dictionary, "add", None)

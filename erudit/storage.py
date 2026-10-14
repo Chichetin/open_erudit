@@ -36,6 +36,7 @@ def to_dict(game: Game) -> dict:
         "move_no": game.move_no,
         "log": game.log,
         "rematch": game.rematch,
+        "show_drafts": game.show_drafts,
         "players": [
             {
                 "id": p.id,
@@ -75,6 +76,7 @@ def from_dict(data: dict, tileset: TileSet, dictionary: WordSource) -> Game:
     game.move_no = int(data["move_no"])
     game.log = list(data.get("log", []))
     game.rematch = data.get("rematch")
+    game.show_drafts = bool(data.get("show_drafts", False))
     game.players = [
         Player(
             id=p["id"],

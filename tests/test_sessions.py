@@ -135,3 +135,19 @@ def test_rematch_of_an_active_game_is_refused(registry):
     with pytest.raises(MoveError):
         registry.create_rematch(game)
     assert game.rematch is None
+
+
+# --- черновик соперника ---------------------------------------------------------
+
+
+def test_post_games_can_turn_on_shared_drafts(client, registry):
+    game_id = client.post("/games", json={"show_drafts": True}).json()["game_id"]
+    assert registry.get(game_id).show_drafts is True
+    plain_id = client.post("/games").json()["game_id"]
+    assert registry.get(plain_id).show_drafts is False
+
+
+def test_rematch_keeps_shared_drafts(registry):
+    game = registry.create(show_drafts=True)
+    finish(game)
+    assert registry.create_rematch(game).show_drafts is True

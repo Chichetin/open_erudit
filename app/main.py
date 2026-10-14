@@ -51,8 +51,14 @@ def create_app(registry: GameRegistry | None = None) -> FastAPI:
     @app.post("/games")
     async def create_game(request: Request):
         registry: GameRegistry = request.app.state.registry
+        # настройки партии необязательны: пустое тело — партия по умолчанию
         try:
-            game = registry.create()
+            options = await request.json()
+        except ValueError:
+            options = {}
+        show_drafts = isinstance(options, dict) and options.get("show_drafts") is True
+        try:
+            game = registry.create(show_drafts=show_drafts)
         except RuntimeError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
         return {
@@ -90,6 +96,8 @@ def create_app(registry: GameRegistry | None = None) -> FastAPI:
             pass
         finally:
             hub.leave(game.id, player.id, socket)
+            if game.show_drafts:
+                await _share_draft(hub, game, player, [])
             player.connected = player.id in hub.online(game.id)
             await _announce_presence(hub, game)
 
@@ -164,6 +172,12 @@ async def _handle(
                 }
             )
             return
+        elif kind == "share_draft":
+            if game.show_drafts:
+                await _share_draft(
+                    hub, game, player, game.draft_view(player.id, parse_placements(message.get("placements")))
+                )
+            return
         elif kind == "commit":
             game.play(player.id, parse_placements(message.get("placements")))
         elif kind == "exchange":
@@ -192,6 +206,12 @@ async def _handle(
 
     registry.save(game)
     await hub.broadcast_state(game)
+
+
+async def _share_draft(hub: Hub, game: Game, player: Player, view: list[dict]) -> None:
+    await hub.broadcast_others(
+        game.id, player.id, {"type": "opponent_draft", "player": player.id, "placements": view}
+    )
 
 
 async def _announce_presence(hub: Hub, game: Game) -> None:

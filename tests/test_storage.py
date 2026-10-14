@@ -173,3 +173,13 @@ def test_rematch_link_survives_reload(tileset, dictionary, tmp_path):
     storage.save(game, tmp_path)
     restored = storage.load_all(tmp_path, tileset, dictionary)["abcdef1234"]
     assert restored.rematch == game.rematch
+
+
+def test_shared_drafts_setting_survives_reload(tileset, dictionary, tmp_path):
+    game = Game("abcdef1234", tileset, dictionary, random.Random(3))
+    game.add_player("Первый")
+    game.add_player("Второй")
+    game.start()
+    game.show_drafts = True
+    storage.save(game, tmp_path)
+    assert storage.load_all(tmp_path, tileset, dictionary)["abcdef1234"].show_drafts is True

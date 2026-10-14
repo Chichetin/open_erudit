@@ -240,6 +240,41 @@ def test_rematch_during_the_game_is_an_error(client, game):
         assert recv(socket, "error")["message"]
 
 
+def test_opponent_sees_the_draft_when_the_game_allows(client, game):
+    game.show_drafts = True
+    rack = set_rack(game, "p1", "ДОМКОТЫ")
+    with client.websocket_connect(f"/g/{game.id}/ws") as first:
+        state = hello(first, game.players[0].token)
+        assert state["show_drafts"] is True
+        with client.websocket_connect(f"/g/{game.id}/ws") as second:
+            hello(second, game.players[1].token)
+            recv(first, "presence")
+            first.send_json({"type": "share_draft", "placements": word_placements(rack, "ДОМ", 7, 6)})
+            message = recv(second, "opponent_draft")
+    assert message["player"] == "p1"
+    assert [item["letter"] for item in message["placements"]] == ["Д", "О", "М"]
+    assert "tile_id" not in repr(message)
+
+
+def test_draft_is_not_shared_by_default(client, game):
+    rack = set_rack(game, "p1", "ДОМКОТЫ")
+    with client.websocket_connect(f"/g/{game.id}/ws") as first:
+        hello(first, game.players[0].token)
+        with client.websocket_connect(f"/g/{game.id}/ws") as second:
+            hello(second, game.players[1].token)
+            recv(first, "presence")
+            first.send_json({"type": "share_draft", "placements": word_placements(rack, "ДОМ", 7, 6)})
+            first.send_json({"type": "pass"})
+            # тестовый клиент держит каждое подключение в своём цикле событий;
+            # пересылка второму не доходит, пока первый не забрал своё
+            recv(first, "state")
+            # следующее, что видит соперник, — новое состояние, а не черновик
+            message = second.receive_json()
+            while message["type"] == "presence":
+                message = second.receive_json()
+    assert message["type"] == "state"
+
+
 def test_journal_arrives_inside_state(client, game):
     # отдельного сообщения на запись журнала нет: журнал целиком лежит в state
     with client.websocket_connect(f"/g/{game.id}/ws") as socket:

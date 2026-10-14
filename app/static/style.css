@@ -46,6 +46,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 
 .lobby main { max-width: 46rem; margin: 0 auto; }
 .lobby #link-list { word-break: break-all; }
+.lobby .option { display: block; margin: 0 0 0.8rem; }
 
 /* --- игровой экран --- */
 
@@ -153,6 +154,8 @@ button:disabled { opacity: 0.45; cursor: default; }
 }
 .tile-draft { position: relative; outline: 2px solid var(--accent); }
 .tile-last { box-shadow: inset 0 0 0 2px var(--ok); }
+/* черновик соперника: видно, что он собирает, но это ещё не ход */
+.tile-opponent { opacity: 0.45; border-style: dashed; }
 
 /* --- стойка --- */
 

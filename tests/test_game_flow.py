@@ -281,3 +281,42 @@ def test_full_two_player_game_reaches_finished():
     assert game.status == "finished"
     assert not game.player_by_id("p1").rack
     assert game.log[-1]["type"] == "finish"
+
+
+# --- черновик для соперника ---------------------------------------------------
+
+
+def test_draft_view_shows_letters_without_tile_ids():
+    game = new_game()
+    rack = set_rack(game, "p1", "ДОМ?КОТ")
+    items = place(rack, "ДОМ", 7, 6) + [Placement(7, 9, rack[3].id, "а")]
+    view = game.draft_view("p1", items)
+    assert view == [
+        {"row": 7, "col": 6, "letter": "Д", "is_blank": False},
+        {"row": 7, "col": 7, "letter": "О", "is_blank": False},
+        {"row": 7, "col": 8, "letter": "М", "is_blank": False},
+        {"row": 7, "col": 9, "letter": "А", "is_blank": True},
+    ]
+
+
+def test_draft_view_drops_foreign_tiles_wrong_letters_and_busy_cells():
+    game = new_game()
+    game.play("p1", place(set_rack(game, "p1", "ДОМКОТЫ"), "ДОМ", 7, 6))
+    rack = set_rack(game, "p2", "КОТЫАСД")
+    view = game.draft_view(
+        "p2",
+        [
+            Placement(7, 7, rack[0].id, "К"),  # клетка занята
+            Placement(8, 7, 12345, "Ж"),  # фишки нет на стойке
+            Placement(9, 7, rack[1].id, "Ж"),  # буква не та
+            Placement(20, 7, rack[2].id, "Т"),  # за доской
+            Placement(8, 8, rack[3].id, "Ы"),
+        ],
+    )
+    assert view == [{"row": 8, "col": 8, "letter": "Ы", "is_blank": False}]
+
+
+def test_draft_view_is_empty_out_of_turn():
+    game = new_game()
+    rack = set_rack(game, "p2", "ДОМКОТЫ")
+    assert game.draft_view("p2", place(rack, "ДОМ", 7, 6)) == []
