@@ -102,7 +102,10 @@ async def _authenticate(
     """Первое сообщение обязано быть `hello` с токеном. Иначе — закрываем."""
     try:
         message = await _receive(socket)
-    except (WebSocketDisconnect, MoveError):
+    except WebSocketDisconnect:
+        # клиент ушёл сам; закрывать нечего, uvicorn на close бросит исключение
+        return None
+    except MoveError:
         await socket.close(code=CLOSE_BAD_PROTOCOL)
         return None
 

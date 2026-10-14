@@ -84,6 +84,26 @@ def test_unknown_game_id_rejected(client):
             socket.receive_json()
 
 
+class _GoneSocket:
+    """Клиент закрыл сокет до hello — так выглядит перезагрузка страницы.
+
+    TestClient эту ситуацию не воспроизводит: он молча принимает close после
+    disconnect, а uvicorn на любую отправку в закрытый сокет бросает исключение.
+    """
+
+    async def receive_text(self):
+        raise WebSocketDisconnect(1005)
+
+    async def close(self, code=1000, reason=None):
+        raise WebSocketDisconnect(1006)
+
+
+async def test_disconnect_before_hello_is_not_an_error(registry, game):
+    from app.main import _authenticate
+
+    assert await _authenticate(_GoneSocket(), registry, game.id) is None
+
+
 # --- приватность ----------------------------------------------------------------
 
 
